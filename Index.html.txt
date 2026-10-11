@@ -1,0 +1,763 @@
+```html
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Soumendra Sir Biology Classes - Report Card Generator</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- html-docx-js for generating editable Word Documents -->
+    <script src="https://cdn.jsdelivr.net/npm/html-docx-js@0.3.1/dist/html-docx.min.js"></script>
+    <!-- FileSaver.js for client-side file saving -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+   
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            200: '#bbf7d0',
+                            600: '#16a34a',
+                            700: '#15803d',
+                            800: '#166534',
+                            900: '#14532d',
+                            950: '#052e16',
+                        },
+                        tealbrand: {
+                            800: '#065f46',
+                            900: '#044e3a',
+                            950: '#022c22',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Cinzel', 'serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #reportCardPaper, #reportCardPaper * {
+                visibility: visible;
+            }
+            #reportCardPaper {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                box-shadow: none !important;
+                border: none !important;
+                padding: 0 !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+        }
+        .paper-shadow {
+            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+    </style>
+</head>
+<body class="h-full flex flex-col text-slate-800 antialiased selection:bg-emerald-500 selection:text-white">
+
+    <header class="bg-gradient-to-r from-tealbrand-950 via-tealbrand-900 to-emerald-900 text-white shadow-lg sticky top-0 z-30 border-b border-emerald-500/20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5">
+            <div class="flex flex-wrap items-center justify-between gap-4">
+                <div class="flex items-center gap-3.5">
+                    <div class="p-2.5 bg-emerald-500/10 backdrop-blur-md rounded-2xl border border-emerald-400/20 shadow-inner">
+                        <i data-lucide="dna" class="w-8 h-8 text-emerald-400"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl sm:text-2xl font-serif font-bold tracking-wide text-emerald-100 flex items-center gap-2">
+                            Soumendra Sir Biology Classes
+                        </h1>
+                        <p class="text-xs text-emerald-300 font-medium tracking-wide">Excellence in NEET & Board Biology Preparation</p>
+                    </div>
+                </div>
+
+                <!-- Action Toolbar -->
+                <div class="flex flex-wrap items-center gap-2 no-print">
+                    <button type="button" onclick="fillSampleData()" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-emerald-100 text-xs font-semibold rounded-lg border border-white/10 transition shadow-sm hover:text-white">
+                        <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-300"></i>
+                        <span>Fill Sample Data</span>
+                    </button>
+                    <button type="button" onclick="resetForm()" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-emerald-100 text-xs font-semibold rounded-lg border border-white/10 transition shadow-sm hover:text-white">
+                        <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                        <span>Reset</span>
+                    </button>
+                    <button type="button" onclick="window.print()" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold rounded-lg border border-slate-700 transition shadow-sm">
+                        <i data-lucide="printer" class="w-3.5 h-3.5 text-teal-300"></i>
+                        <span>Print / PDF</span>
+                    </button>
+                    <button type="button" onclick="downloadWordDocument()" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-bold rounded-lg transition shadow-md hover:shadow-amber-400/20">
+                        <i data-lucide="file-down" class="w-4 h-4"></i>
+                        <span>Export Editable .docx</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+           
+            <!-- Left Controls Pane: Input Form -->
+            <div class="lg:col-span-5 space-y-5 no-print">
+               
+                <!-- Section 1: Student Information Form -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 space-y-4">
+                    <div class="flex items-center gap-2 pb-3 border-b border-slate-100">
+                        <div class="p-1.5 bg-emerald-100 text-emerald-800 rounded-lg">
+                            <i data-lucide="user-check" class="w-4 h-4"></i>
+                        </div>
+                        <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wider">1. Student Profile</h2>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                        <div class="sm:col-span-2">
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Student Full Name *</label>
+                            <input type="text" id="studentName" placeholder="e.g. Ananya Roy" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition" oninput="updateCalculations()">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Roll / Reg. No. *</label>
+                            <input type="text" id="rollNo" placeholder="e.g. BIO-2026-104" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition" oninput="updateCalculations()">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Class / Batch *</label>
+                            <select id="studentClass" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition bg-white" onchange="updateCalculations()">
+                                <option value="Class 11 NEET Prep Batch">Class 11 NEET Prep Batch</option>
+                                <option value="Class 12 Boards & NEET">Class 12 Boards & NEET</option>
+                                <option value="NEET Repeater / Dropper Batch">NEET Repeater / Dropper Batch</option>
+                                <option value="Class 10 Foundation Biology">Class 10 Foundation Biology</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Academic Session *</label>
+                            <input type="text" id="academicSession" value="2025 - 2026" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition" oninput="updateCalculations()">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Evaluation Date</label>
+                            <input type="date" id="reportDate" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition" onchange="updateCalculations()">
+                        </div>
+
+                        <div class="sm:col-span-2">
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Parent / Guardian Name</label>
+                            <input type="text" id="guardianName" placeholder="e.g. Dr. S. N. Roy" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition" oninput="updateCalculations()">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 2: Dynamic Marks & Topics Entry -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 space-y-4">
+                    <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                        <div class="flex items-center gap-2">
+                            <div class="p-1.5 bg-emerald-100 text-emerald-800 rounded-lg">
+                                <i data-lucide="calculator" class="w-4 h-4"></i>
+                            </div>
+                            <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wider">2. Marks & Topic Breakdown</h2>
+                        </div>
+                        <button type="button" onclick="addMarkRow()" class="inline-flex items-center gap-1 px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-xs font-bold rounded-lg transition">
+                            <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add Exam
+                        </button>
+                    </div>
+
+                    <div class="space-y-3 max-h-[380px] overflow-y-auto pr-1" id="marksContainer">
+                        <!-- Dynamic Mark Entry Items Injected Here -->
+                    </div>
+                </div>
+
+                <!-- Section 3: Performance Remarks Customizer -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 space-y-3">
+                    <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+                        <div class="flex items-center gap-2">
+                            <div class="p-1.5 bg-emerald-100 text-emerald-800 rounded-lg">
+                                <i data-lucide="message-square" class="w-4 h-4"></i>
+                            </div>
+                            <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wider">3. Educator Remarks</h2>
+                        </div>
+                        <button type="button" onclick="resetRemarksToAuto()" class="text-[11px] text-emerald-700 font-semibold hover:underline">Reset Auto-Remark</button>
+                    </div>
+
+                    <p class="text-[11px] text-slate-500">Auto-generated based on total score percentage. You can edit this manually:</p>
+                    <textarea id="customRemark" rows="3" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition" placeholder="Teacher remarks..." oninput="updateCalculations()"></textarea>
+                </div>
+
+            </div>
+
+            <div class="lg:col-span-7 space-y-4">
+               
+                <!-- Performance KPI Stats Banner -->
+                <div class="no-print bg-slate-900 text-white rounded-2xl p-4 shadow-md grid grid-cols-2 sm:grid-cols-4 gap-3 border border-slate-800">
+                    <div class="bg-slate-800/80 p-3 rounded-xl border border-slate-700/60">
+                        <span class="text-[10px] uppercase tracking-wider text-slate-400 font-semibold block">Total Marks</span>
+                        <span id="kpiTotal" class="text-lg font-bold text-white">0 / 0</span>
+                    </div>
+                    <div class="bg-slate-800/80 p-3 rounded-xl border border-slate-700/60">
+                        <span class="text-[10px] uppercase tracking-wider text-slate-400 font-semibold block">Percentage</span>
+                        <span id="kpiPercent" class="text-lg font-bold text-emerald-400">0.0%</span>
+                    </div>
+                    <div class="bg-slate-800/80 p-3 rounded-xl border border-slate-700/60">
+                        <span class="text-[10px] uppercase tracking-wider text-slate-400 font-semibold block">Overall Grade</span>
+                        <span id="kpiGrade" class="text-lg font-bold text-amber-300">N/A</span>
+                    </div>
+                    <div class="bg-slate-800/80 p-3 rounded-xl border border-slate-700/60">
+                        <span class="text-[10px] uppercase tracking-wider text-slate-400 font-semibold block">Status</span>
+                        <span id="kpiStatus" class="text-xs font-bold text-slate-200 mt-1 block truncate">Pending</span>
+                    </div>
+                </div>
+
+                <!-- Printable / Exportable Document Paper -->
+                <div id="reportCardPaper" class="bg-white rounded-2xl paper-shadow border border-slate-200/90 p-6 sm:p-8 space-y-6 relative overflow-hidden">
+                   
+                    <!-- Top Academic Header -->
+                    <div class="border-b-2 border-emerald-800 pb-4 text-center space-y-1">
+                        <div class="flex items-center justify-center gap-2 mb-1">
+                            <i data-lucide="dna" class="w-6 h-6 text-emerald-700 no-print"></i>
+                            <h2 class="text-xl sm:text-2xl font-serif font-bold text-emerald-950 tracking-wider uppercase">
+                                SOUMENDRA SIR BIOLOGY CLASSES
+                            </h2>
+                        </div>
+                        <p class="text-xs text-slate-600 font-medium">Premier Coaching Institute for Class 11, 12 & NEET Biology Aspirants</p>
+                        <p class="text-[11px] text-slate-500">Center: Main Academic Building, College Road | Helpline: +91 98765 43210</p>
+                       
+                        <div class="pt-2">
+                            <span class="inline-block bg-tealbrand-800 text-white font-semibold text-xs tracking-widest px-4 py-1 rounded-full uppercase">
+                                Academic Performance Report Card
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Student Metadata Summary Grid -->
+                    <div class="bg-slate-50/80 border border-slate-200 rounded-xl p-3.5 text-xs grid grid-cols-2 sm:grid-cols-3 gap-y-2.5 gap-x-4">
+                        <div>
+                            <span class="text-slate-500 block text-[10px] uppercase font-bold">Student Name</span>
+                            <span id="docName" class="font-bold text-slate-800">[Student Name]</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-500 block text-[10px] uppercase font-bold">Roll / Reg. Number</span>
+                            <span id="docRoll" class="font-bold text-slate-800">[Roll No]</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-500 block text-[10px] uppercase font-bold">Class / Course</span>
+                            <span id="docClass" class="font-bold text-slate-800">Class 11 NEET Prep Batch</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-500 block text-[10px] uppercase font-bold">Academic Session</span>
+                            <span id="docSession" class="font-bold text-slate-800">2025 - 2026</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-500 block text-[10px] uppercase font-bold">Parent / Guardian</span>
+                            <span id="docGuardian" class="font-bold text-slate-800">N/A</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-500 block text-[10px] uppercase font-bold">Date of Issue</span>
+                            <span id="docDate" class="font-bold text-slate-800">--</span>
+                        </div>
+                    </div>
+
+                    <!-- Marks Table Preview -->
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs border-collapse">
+                            <thead>
+                                <tr class="bg-tealbrand-800 text-white font-semibold">
+                                    <th class="p-2.5 border border-tealbrand-800 rounded-tl-lg">Exam Title</th>
+                                    <th class="p-2.5 border border-tealbrand-800">Syllabus Topic / Chapter</th>
+                                    <th class="p-2.5 border border-tealbrand-800 text-center w-20">Max Marks</th>
+                                    <th class="p-2.5 border border-tealbrand-800 text-center w-20">Obtained</th>
+                                    <th class="p-2.5 border border-tealbrand-800 text-center w-20 rounded-tr-lg">% Score</th>
+                                </tr>
+                            </thead>
+                            <tbody id="docTableBody" class="divide-y divide-slate-200">
+                                <!-- Dynamic Preview Rows -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Performance Grade & Remark Summary -->
+                    <div class="bg-emerald-50/70 border border-emerald-200 rounded-xl p-4 space-y-2">
+                        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-emerald-200/80 pb-2">
+                            <div class="text-xs">
+                                <span class="text-slate-600 font-semibold">Aggregate Score: </span>
+                                <span id="docScore" class="font-bold text-slate-900">0 / 0</span>
+                            </div>
+                            <div class="text-xs">
+                                <span class="text-slate-600 font-semibold">Overall Percentage: </span>
+                                <span id="docPercent" class="font-bold text-emerald-800">0.0%</span>
+                            </div>
+                            <div class="text-xs">
+                                <span class="text-slate-600 font-semibold">Final Grade: </span>
+                                <span id="docGrade" class="font-extrabold text-tealbrand-800 text-sm">N/A</span>
+                            </div>
+                        </div>
+
+                        <div>
+                            <span class="text-[11px] font-bold text-emerald-950 uppercase tracking-wide block">Faculty Performance Remarks & Guidance:</span>
+                            <p id="docRemark" class="text-xs text-slate-700 italic mt-1 leading-relaxed">No evaluation available.</p>
+                        </div>
+                    </div>
+
+                    <!-- Institutional Signature Section -->
+                    <div class="pt-8 flex justify-between items-end border-t border-slate-200 text-xs">
+                        <div class="text-center">
+                            <div class="w-36 border-b border-slate-400 mb-1"></div>
+                            <span class="text-slate-600 font-medium text-[11px]">Parent / Guardian Signature</span>
+                        </div>
+
+                        <div class="text-center">
+                            <div class="font-serif font-bold text-sm text-emerald-900 mb-0.5">Soumendra Sir</div>
+                            <div class="w-44 border-b-2 border-emerald-800 mb-1"></div>
+                            <span class="font-bold text-slate-800 text-[11px] block">Soumendra Sir</span>
+                            <span class="text-[10px] text-slate-500 font-medium">Founder & Lead Educator (Biology)</span>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        // Sample Data Records for dynamic population
+        const sampleRecords = [
+            { exam: "Unit Test 1", topic: "Cell: The Unit of Life & Biomolecules", max: 50, obt: 47 },
+            { exam: "NEET Mock Test 02", topic: "Human Physiology (Digestion & Circulation)", max: 100, obt: 88 },
+            { exam: "Mid-Term Exam", topic: "Genetics & Molecular Basis of Inheritance", max: 100, obt: 92 },
+            { exam: "DPP Evaluation 05", topic: "Plant Physiology & Photosynthesis", max: 50, obt: 44 }
+        ];
+
+        let isRemarkUserModified = false;
+
+        window.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+           
+            // Set current date
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('reportDate').value = today;
+
+            // Load initial sample data
+            fillSampleData();
+        });
+
+        function addMarkRow(exam = '', topic = '', max = 50, obt = 0) {
+            const container = document.getElementById('marksContainer');
+            const rowId = 'mark_row_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+
+            const rowDiv = document.createElement('div');
+            rowDiv.id = rowId;
+            rowDiv.className = "p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2 relative group hover:border-emerald-300 transition";
+            rowDiv.innerHTML = `
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase">Exam Title</label>
+                        <input type="text" class="exam-input w-full px-2 py-1 bg-white border border-slate-300 rounded-lg text-xs outline-none focus:border-emerald-500" value="${exam}" placeholder="e.g. Unit Test 1" oninput="updateCalculations()">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase">Biology Topic</label>
+                        <input type="text" class="topic-input w-full px-2 py-1 bg-white border border-slate-300 rounded-lg text-xs outline-none focus:border-emerald-500" value="${topic}" placeholder="e.g. Genetics" oninput="updateCalculations()">
+                    </div>
+                </div>
+                <div class="flex items-center justify-between gap-3 pt-1">
+                    <div class="flex items-center gap-2 w-full">
+                        <div class="w-1/2">
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase">Max Marks</label>
+                            <input type="number" min="1" class="max-input w-full px-2 py-1 bg-white border border-slate-300 rounded-lg text-xs text-center font-semibold outline-none focus:border-emerald-500" value="${max}" oninput="updateCalculations()">
+                        </div>
+                        <div class="w-1/2">
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase">Obtained</label>
+                            <input type="number" min="0" class="obt-input w-full px-2 py-1 bg-white border border-slate-300 rounded-lg text-xs text-center font-bold text-emerald-800 outline-none focus:border-emerald-500" value="${obt}" oninput="updateCalculations()">
+                        </div>
+                    </div>
+                    <div class="pt-3">
+                        <button type="button" onclick="removeMarkRow('${rowId}')" class="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition" title="Delete Row">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            container.appendChild(rowDiv);
+            lucide.createIcons();
+            updateCalculations();
+        }
+
+        function removeMarkRow(rowId) {
+            const row = document.getElementById(rowId);
+            if (row) {
+                row.remove();
+                updateCalculations();
+            }
+        }
+
+        document.getElementById('customRemark').addEventListener('input', () => {
+            isRemarkUserModified = true;
+        });
+
+        function resetRemarksToAuto() {
+            isRemarkUserModified = false;
+            updateCalculations();
+        }
+
+        function fillSampleData() {
+            document.getElementById('studentName').value = "Ananya Roy";
+            document.getElementById('rollNo').value = "BIO-2026-104";
+            document.getElementById('studentClass').value = "Class 11 NEET Prep Batch";
+            document.getElementById('academicSession').value = "2025 - 2026";
+            document.getElementById('guardianName').value = "Dr. S. N. Roy";
+           
+            const container = document.getElementById('marksContainer');
+            container.innerHTML = '';
+
+            sampleRecords.forEach(item => {
+                addMarkRow(item.exam, item.topic, item.max, item.obt);
+            });
+
+            isRemarkUserModified = false;
+            updateCalculations();
+        }
+
+        function resetForm() {
+            document.getElementById('studentName').value = '';
+            document.getElementById('rollNo').value = '';
+            document.getElementById('guardianName').value = '';
+            document.getElementById('marksContainer').innerHTML = '';
+            isRemarkUserModified = false;
+
+            addMarkRow("Unit Test 1", "Cell Biology & Cytology", 50, 0);
+            updateCalculations();
+        }
+
+        function updateCalculations() {
+            // Get Student Meta Values
+            const name = document.getElementById('studentName').value.trim() || '[Student Name]';
+            const roll = document.getElementById('rollNo').value.trim() || '[Roll No]';
+            const sClass = document.getElementById('studentClass').value;
+            const session = document.getElementById('academicSession').value.trim() || '2025 - 2026';
+            const guardian = document.getElementById('guardianName').value.trim() || 'N/A';
+            const rawDate = document.getElementById('reportDate').value;
+
+            let formattedDate = 'N/A';
+            if (rawDate) {
+                const d = new Date(rawDate);
+                formattedDate = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+            }
+
+            // Sync Header Details
+            document.getElementById('docName').textContent = name;
+            document.getElementById('docRoll').textContent = roll;
+            document.getElementById('docClass').textContent = sClass;
+            document.getElementById('docSession').textContent = session;
+            document.getElementById('docGuardian').textContent = guardian;
+            document.getElementById('docDate').textContent = formattedDate;
+
+            // Compute Sum Totals
+            const markItems = document.querySelectorAll('#marksContainer > div');
+            let totalMax = 0;
+            let totalObt = 0;
+
+            const docTableBody = document.getElementById('docTableBody');
+            docTableBody.innerHTML = '';
+
+            markItems.forEach(item => {
+                const exam = item.querySelector('.exam-input').value.trim() || 'General Test';
+                const topic = item.querySelector('.topic-input').value.trim() || 'Biology Chapter';
+                const max = parseFloat(item.querySelector('.max-input').value) || 0;
+                let obt = parseFloat(item.querySelector('.obt-input').value) || 0;
+
+                if (obt > max) {
+                    obt = max;
+                    item.querySelector('.obt-input').value = max;
+                }
+
+                totalMax += max;
+                totalObt += obt;
+
+                const percent = max > 0 ? ((obt / max) * 100).toFixed(1) : '0.0';
+
+                // Render Live Table Row
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition";
+                tr.innerHTML = `
+                    <td class="p-2 border border-slate-200 font-semibold text-slate-800">${exam}</td>
+                    <td class="p-2 border border-slate-200 text-slate-600">${topic}</td>
+                    <td class="p-2 border border-slate-200 text-center">${max}</td>
+                    <td class="p-2 border border-slate-200 text-center font-bold text-emerald-900">${obt}</td>
+                    <td class="p-2 border border-slate-200 text-center font-medium">${percent}%</td>
+                `;
+                docTableBody.appendChild(tr);
+            });
+
+            // Calculate Percentage & Auto Grade
+            const percentage = totalMax > 0 ? (totalObt / totalMax) * 100 : 0;
+            const formattedPercentage = percentage.toFixed(1);
+
+            let grade = 'F';
+            let remark = 'Requires immediate attention and dedicated practice sessions. Regular doubt-clearing recommended.';
+            let status = 'Needs Improvement';
+
+            if (percentage >= 90) {
+                grade = 'A+ (Outstanding)';
+                remark = 'Outstanding conceptual mastery in Biology! Exceptional performance across Botany & Zoology modules.';
+                status = 'Passed with Distinction';
+            } else if (percentage >= 80) {
+                grade = 'A';
+                remark = 'Excellent understanding of core topics. Keep practicing NEET level numericals and diagrammatic questions.';
+                status = 'First Class Distinction';
+            } else if (percentage >= 70) {
+                grade = 'B+';
+                remark = 'Good effort! Focus on thorough line-by-line reading of NCERT textbooks and regular practice papers.';
+                status = 'Passed (First Division)';
+            } else if (percentage >= 60) {
+                grade = 'B';
+                remark = 'Satisfactory performance. Consistent daily revision required to strengthen high-weightage chapters.';
+                status = 'Passed (Second Division)';
+            } else if (percentage >= 50) {
+                grade = 'C';
+                remark = 'Average performance. Needs targeted doubt sessions and regular attempt of Daily Practice Problems (DPPs).';
+                status = 'Passed';
+            }
+
+            if (!isRemarkUserModified) {
+                document.getElementById('customRemark').value = remark;
+            }
+
+            const activeRemark = document.getElementById('customRemark').value;
+
+            // Sync KPIs
+            document.getElementById('kpiTotal').textContent = `${totalObt} / ${totalMax}`;
+            document.getElementById('kpiPercent').textContent = `${formattedPercentage}%`;
+            document.getElementById('kpiGrade').textContent = grade.split(' ')[0];
+            document.getElementById('kpiStatus').textContent = status;
+
+            // Sync Document Card
+            document.getElementById('docScore').textContent = `${totalObt} / ${totalMax}`;
+            document.getElementById('docPercent').textContent = `${formattedPercentage}%`;
+            document.getElementById('docGrade').textContent = grade;
+            document.getElementById('docRemark').textContent = activeRemark;
+        }
+
+        function downloadWordDocument() {
+            const studentName = document.getElementById('studentName').value.trim() || 'Student';
+            const safeName = studentName.replace(/[^a-zA-Z0-9]/g, '_');
+            const fileName = `Soumendra_Sir_Biology_Report_${safeName}.docx`;
+
+            // Build MS Word Compatible Document HTML Template
+            const htmlDocument = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="utf-8">
+                    <title>Report Card - Soumendra Sir Biology Classes</title>
+                    <style>
+                        body {
+                            font-family: 'Calibri', 'Arial', sans-serif;
+                            color: #0f172a;
+                            margin: 20px;
+                        }
+                        .header-box {
+                            text-align: center;
+                            border-bottom: 2px solid #065f46;
+                            padding-bottom: 12px;
+                            margin-bottom: 15px;
+                        }
+                        .title {
+                            font-size: 20pt;
+                            font-weight: bold;
+                            color: #065f46;
+                            text-transform: uppercase;
+                            margin: 0;
+                        }
+                        .subtitle {
+                            font-size: 10pt;
+                            color: #334155;
+                            font-style: italic;
+                            margin-top: 4px;
+                        }
+                        .contact {
+                            font-size: 9pt;
+                            color: #64748b;
+                            margin-top: 2px;
+                        }
+                        .badge {
+                            background-color: #065f46;
+                            color: #ffffff;
+                            text-align: center;
+                            font-weight: bold;
+                            font-size: 11pt;
+                            padding: 6px;
+                            margin-top: 10px;
+                        }
+                        .meta-table {
+                            width: 100%;
+                            border-collapse: collapse;
+                            margin-top: 15px;
+                            margin-bottom: 20px;
+                            background-color: #f8fafc;
+                        }
+                        .meta-table td {
+                            padding: 6px 10px;
+                            border: 1px solid #cbd5e1;
+                            font-size: 10pt;
+                        }
+                        .meta-label {
+                            font-weight: bold;
+                            color: #0f172a;
+                        }
+                        .marks-table {
+                            width: 100%;
+                            border-collapse: collapse;
+                            margin-bottom: 20px;
+                        }
+                        .marks-table th {
+                            background-color: #065f46;
+                            color: #ffffff;
+                            font-size: 10pt;
+                            font-weight: bold;
+                            padding: 8px;
+                            border: 1px solid #065f46;
+                            text-align: left;
+                        }
+                        .marks-table td {
+                            padding: 7px 8px;
+                            border: 1px solid #cbd5e1;
+                            font-size: 10pt;
+                        }
+                        .summary-box {
+                            background-color: #ecfdf5;
+                            border: 1px solid #a7f3d0;
+                            padding: 12px;
+                            margin-bottom: 30px;
+                        }
+                        .summary-grid {
+                            width: 100%;
+                            border-collapse: collapse;
+                        }
+                        .summary-grid td {
+                            font-size: 10.5pt;
+                            font-weight: bold;
+                            color: #065f46;
+                        }
+                        .remark-box {
+                            margin-top: 8px;
+                            padding-top: 8px;
+                            border-top: 1px solid #a7f3d0;
+                            font-size: 10pt;
+                            color: #1e293b;
+                            font-style: italic;
+                        }
+                        .signature-table {
+                            width: 100%;
+                            border-collapse: collapse;
+                            margin-top: 40px;
+                        }
+                        .signature-table td {
+                            width: 50%;
+                            vertical-align: bottom;
+                            font-size: 10pt;
+                        }
+                        .sig-line {
+                            border-top: 1px solid #475569;
+                            width: 180px;
+                            margin-bottom: 4px;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="header-box">
+                        <div class="title">SOUMENDRA SIR BIOLOGY CLASSES</div>
+                        <div class="subtitle">Premier Coaching Institute for Class 11, 12 & NEET Biology Aspirants</div>
+                        <div class="contact">Center: Main Academic Building, College Road | Helpline: +91 98765 43210</div>
+                        <div class="badge">ACADEMIC PERFORMANCE REPORT CARD</div>
+                    </div>
+
+                    <table class="meta-table">
+                        <tr>
+                            <td><span class="meta-label">Student Name:</span> ${document.getElementById('docName').textContent}</td>
+                            <td><span class="meta-label">Roll / Reg. No.:</span> ${document.getElementById('docRoll').textContent}</td>
+                        </tr>
+                        <tr>
+                            <td><span class="meta-label">Class / Course:</span> ${document.getElementById('docClass').textContent}</td>
+                            <td><span class="meta-label">Academic Session:</span> ${document.getElementById('docSession').textContent}</td>
+                        </tr>
+                        <tr>
+                            <td><span class="meta-label">Parent / Guardian:</span> ${document.getElementById('docGuardian').textContent}</td>
+                            <td><span class="meta-label">Date of Issue:</span> ${document.getElementById('docDate').textContent}</td>
+                        </tr>
+                    </table>
+
+                    <table class="marks-table">
+                        <thead>
+                            <tr>
+                                <th>Exam Title</th>
+                                <th>Syllabus Topic / Chapter</th>
+                                <th style="text-align: center;">Max Marks</th>
+                                <th style="text-align: center;">Obtained</th>
+                                <th style="text-align: center;">% Score</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${document.getElementById('docTableBody').innerHTML}
+                        </tbody>
+                    </table>
+
+                    <div class="summary-box">
+                        <table class="summary-grid">
+                            <tr>
+                                <td>Total Score: ${document.getElementById('docScore').textContent}</td>
+                                <td style="text-align: center;">Percentage: ${document.getElementById('docPercent').textContent}</td>
+                                <td style="text-align: right;">Overall Grade: ${document.getElementById('docGrade').textContent}</td>
+                            </tr>
+                        </table>
+                        <div class="remark-box">
+                            <strong>Faculty Remarks & Guidance:</strong><br>
+                            "${document.getElementById('docRemark').textContent}"
+                        </div>
+                    </div>
+
+                    <table class="signature-table">
+                        <tr>
+                            <td style="text-align: left;">
+                                <div class="sig-line"></div>
+                                <div>Parent / Guardian Signature</div>
+                            </td>
+                            <td style="text-align: right;">
+                                <div style="font-family: Georgia, serif; font-weight: bold; font-size: 12pt; color: #065f46; margin-bottom: 2px;">Soumendra Sir</div>
+                                <div class="sig-line" style="margin-left: auto;"></div>
+                                <div><strong>Soumendra Sir</strong></div>
+                                <div style="font-size: 8.5pt; color: #64748b;">Founder & Lead Educator (Biology)</div>
+                            </td>
+                        </tr>
+                    </table>
+                </body>
+                </html>
+            `;
+
+            try {
+                const converted = htmlDocx.asBlob(htmlDocument);
+                saveAs(converted, fileName);
+            } catch (err) {
+                console.error("Docx export failed:", err);
+                alert("An error occurred while generating the editable Word document. Please ensure all inputs are valid.");
+            }
+        }
+    </script>
+</body>
+</html>
+```
